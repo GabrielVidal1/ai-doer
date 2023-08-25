@@ -8,6 +8,9 @@ const exec = async (args: string[]): Promise<string> => {
 
   try {
     const content = await fs.promises.readFile(commandFile, 'utf8');
+    for (let i = 1; i < args.length; i++) {
+      content.replace(`{${i}}`, args[i]);
+    }
     return content;
   } catch (error) {
     if (error instanceof Error) {

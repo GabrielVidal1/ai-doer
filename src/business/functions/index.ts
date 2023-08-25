@@ -1,7 +1,11 @@
+import { getCommandArgs, getResult } from '../ai';
+import { FunctionLine } from '../parser';
+import { ProcessedLine } from '../processor';
+import think from './services/think';
 import writeFile from './services/writeFile';
-import { AiFunction } from './types';
+import { AiFunction, isPromptFunction } from './types';
 
-const FUNCTIONS: AiFunction[] = [writeFile];
+const FUNCTIONS: AiFunction[] = [writeFile, think];
 
 export const getFunction = (functionName: string): AiFunction => {
   const functionToExecute = FUNCTIONS.find(f => f.name === functionName);
@@ -9,4 +13,18 @@ export const getFunction = (functionName: string): AiFunction => {
     throw new Error(`Function ${functionName} not found`);
   }
   return functionToExecute;
+};
+
+export const executeFunction = async (
+  line: FunctionLine,
+  processedLines: ProcessedLine[]
+): Promise<string> => {
+  const func = getFunction(line.name);
+
+  if (isPromptFunction(func)) {
+    return getResult(processedLines, func);
+  }
+  const commandArgs = await getCommandArgs(processedLines, func);
+  const result = func.exec(line.args)(commandArgs);
+  return result;
 };

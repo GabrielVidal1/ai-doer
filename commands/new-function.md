@@ -31,6 +31,8 @@ return readFile(commandFile);
 
 * don't forget the export default shown in readFile.ts
 
+> think
+
 > writeFile src/business/commands/services/command.ts
 
 Edit the file src/business/commands/index.ts to add the new command

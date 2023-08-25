@@ -1,5 +1,5 @@
 import { writeFileSync } from 'fs';
-import { AiFunction } from '../types';
+import { AiFunction, StandardFunction } from '../types';
 
 const exec =
   (cliArgs: string[]) =>
@@ -16,7 +16,7 @@ const exec =
     return 'File written';
   };
 
-const openaiFunction: AiFunction['openaiFunction'] = {
+const openaiFunction: StandardFunction['openaiFunction'] = {
   name: 'writeFile',
   description: 'Write a file to the file system',
   parameters: {

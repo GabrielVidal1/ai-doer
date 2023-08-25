@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import OpenAI from 'openai';
 import { ChatCompletionMessage } from 'openai/resources/chat';
-import { AiFunction } from '../functions/types';
+import { PromptFunction, StandardFunction } from '../functions/types';
 import { COMMAND_TOKEN } from '../parser/constants';
 import { ProcessedLine } from '../processor';
 
@@ -9,6 +9,13 @@ import { ProcessedLine } from '../processor';
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY, // This is also the default, can be omitted
 });
+
+const config = {
+  model: 'gpt-3.5-turbo',
+};
+
+const SYSTEM_PROMPT =
+  'You are a software engineer trying to help the user translate their specs into code';
 
 export const lineToMessage = (line: ProcessedLine): ChatCompletionMessage => {
   if (line.type === 'function') {
@@ -31,16 +38,40 @@ ${line.result}`,
   }
 };
 
-export const getCommandArgs = async (
+export const getResult = async (
   processedLines: ProcessedLine[],
-  func: AiFunction
-): Promise<any> => {
+  func: PromptFunction
+): Promise<string> => {
   const conv = processedLines.map(lineToMessage);
 
+  const stream = await openai.chat.completions.create({
+    ...config,
+    stream: true,
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      ...conv,
+      { role: 'user', content: func.prompt },
+    ],
+  });
+  let result = '';
+  for await (const part of stream) {
+    result += part.choices[0]?.delta?.content || '';
+    process.stdout.write(part.choices[0]?.delta?.content || '');
+  }
+  return result;
+};
+
+export const getCommandArgs = async (
+  processedLines: ProcessedLine[],
+  func: StandardFunction
+): Promise<any> => {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   const chatCompletion = await openai.chat.completions.create({
-    model: 'gpt-3.5-turbo',
-    messages: [...conv, { role: 'user', content: 'Hello!' }],
+    ...config,
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      ...processedLines.map(lineToMessage),
+    ],
     function_call: { name: func.name },
     functions: [func.openaiFunction],
   });

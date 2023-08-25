@@ -1,6 +1,5 @@
-import { getCommandArgs } from '../ai';
 import { executeCommand } from '../commands';
-import { getFunction } from '../functions';
+import { executeFunction } from '../functions';
 import { Line, parseContent } from '../parser';
 
 export type ProcessedLine =
@@ -18,7 +17,7 @@ export type ProcessedLine =
       type: 'function';
       name: string;
       args: string[];
-      generatedArgs: any;
+      generatedArgs?: any;
       result: string;
     }
   | {
@@ -55,12 +54,9 @@ const processLines = async (lines: Line[]): Promise<ProcessedLine[]> => {
           result,
         });
       } else {
-        const func = getFunction(line.name);
-        const commandArgs = await getCommandArgs(processedLines, func);
-        const result = func.exec(line.args)(commandArgs);
+        const result = await executeFunction(line, processedLines);
         processedLines.push({
           ...line,
-          generatedArgs: commandArgs,
           result,
         });
       }
