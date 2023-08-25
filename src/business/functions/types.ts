@@ -7,7 +7,7 @@ export type PromptFunction = {
 
 export type StandardFunction = {
   name: string;
-  exec: (args: string[]) => (args: any) => string;
+  exec: (args: string[]) => (args: any) => Promise<string> | string;
   openaiFunction: CompletionCreateParams.Function;
 };
 

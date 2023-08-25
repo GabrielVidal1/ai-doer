@@ -1,4 +1,7 @@
+import fs from 'fs';
 import { COMMAND_TOKEN, FUNCTION_TOKEN } from './constants';
+
+const CUSTOM_COMMAND_FOLDERS = './customCommands';
 
 export type CommandLine = {
   type: 'command';
@@ -29,6 +32,22 @@ const parseSpecialLine = (line: string): CommandLine | FunctionLine => {
   };
 };
 
+const getSubCommand = (args: string[]): string => {
+  const command = args[0];
+  const commandFile = `${CUSTOM_COMMAND_FOLDERS}/${command}.md`;
+
+  try {
+    console.log(commandFile);
+    const content = fs.readFileSync(commandFile, 'utf8');
+    for (let i = 1; i < args.length; i++) {
+      content.replace(`{${i}}`, args[i]);
+    }
+    return content;
+  } catch (error) {
+    throw new Error('Unknown custom command');
+  }
+};
+
 export const parseContent = (fileContent: string): Line[] => {
   const lines = fileContent.split('\n');
   const parsedLines: Line[] = [];
@@ -40,7 +59,11 @@ export const parseContent = (fileContent: string): Line[] => {
         parsedLines.push({ type: 'string', value: current });
       }
       current = '';
-      parsedLines.push(parseSpecialLine(line));
+      const specialLine = parseSpecialLine(line);
+      parsedLines.push(specialLine);
+      if (specialLine.type === 'command' && specialLine.name === 'command') {
+        parsedLines.push(...parseContent(getSubCommand(specialLine.args)));
+      }
     } else {
       current += line;
     }

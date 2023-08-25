@@ -1,11 +1,12 @@
 import { getCommandArgs, getResult } from '../ai';
 import { FunctionLine } from '../parser';
 import { ProcessedLine } from '../processor';
+import bash from './services/bash';
 import think from './services/think';
 import writeFile from './services/writeFile';
 import { AiFunction, isPromptFunction } from './types';
 
-const FUNCTIONS: AiFunction[] = [writeFile, think];
+const FUNCTIONS: AiFunction[] = [writeFile, think, bash];
 
 export const getFunction = (functionName: string): AiFunction => {
   const functionToExecute = FUNCTIONS.find(f => f.name === functionName);
@@ -25,6 +26,7 @@ export const executeFunction = async (
     return getResult(processedLines, func);
   }
   const commandArgs = await getCommandArgs(processedLines, func);
+  console.log('commandArgs', commandArgs);
   const result = func.exec(line.args)(commandArgs);
   return result;
 };
