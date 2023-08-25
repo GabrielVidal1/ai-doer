@@ -1,4 +1,4 @@
-import { getCommandArgs, getResult } from '../ai';
+import { aiClient } from '../ai';
 import { FunctionLine } from '../parser';
 import { ProcessedLine } from '../processor';
 import bash from './services/bash';
@@ -23,9 +23,9 @@ export const executeFunction = async (
   const func = getFunction(line.name);
 
   if (isPromptFunction(func)) {
-    return getResult(processedLines, func);
+    return aiClient.getResult(processedLines, func);
   }
-  const commandArgs = await getCommandArgs(processedLines, func);
+  const commandArgs = await aiClient.getCommandArgs(processedLines, func);
   console.log('commandArgs', commandArgs);
   const result = func.exec(line.args)(commandArgs);
   return result;
