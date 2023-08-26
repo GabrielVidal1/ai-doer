@@ -1,4 +1,5 @@
-/bash tree --gitignore .gitignore .
+/bash which tree
+/bash tree --gitignore
 /bash pwd
 
 ## Original README
@@ -10,4 +11,8 @@
 From the files of the project
 write a simple README.md file of the project.
 
-> writeFile REAMDE.md
+> writeFile ./test/REAMDE.md
+
+then translate the readme in french
+
+> writeFile ./test/REAMDE-fr.md
