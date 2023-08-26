@@ -1,5 +1,5 @@
 import { PromptFunction, StandardFunction } from '../functions/types';
-import { ProcessedLine } from '../processor';
+import { ProcessedLine } from '../processor/types';
 
 export interface AIClient {
   getCommandArgs?: (

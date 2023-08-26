@@ -15,8 +15,10 @@ program
 program
   .command('parse <command>')
   .description('parse a command')
-  .action(async command => {
-    const res = await processText(command);
+  .option('-n, --no-functions', 'do not execute functions', false)
+  .action(async (command, options) => {
+    const res = await processText(command, options.noFunctions);
+    console.log(res);
     printProcessedLines(res);
   });
 

@@ -1,14 +1,20 @@
-import { writeFileSync } from 'fs';
+import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { AiFunction, StandardFunction } from '../types';
+import path from 'path';
 
 const exec =
   (cliArgs: string[]) =>
-  (args: any): string => {
+  (args: { content: string }): string => {
     const content = args.content;
     const filePath = cliArgs[0];
 
     if (!filePath) {
       throw new Error('No file path provided');
+    }
+
+    const folderPath = path.dirname(filePath);
+    if (!existsSync(folderPath)) {
+      mkdirSync(folderPath, { recursive: true });
     }
 
     writeFileSync(filePath, content);

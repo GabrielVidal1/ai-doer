@@ -3,7 +3,7 @@ import OpenAI from 'openai';
 import { ChatCompletionMessage } from 'openai/resources/chat';
 import { PromptFunction, StandardFunction } from '../../functions/types';
 import { COMMAND_TOKEN } from '../../parser/constants';
-import { ProcessedLine } from '../../processor';
+import { ProcessedLine } from '../../processor/types';
 import { AIClient } from '../types';
 
 const SYSTEM_PROMPT =
@@ -13,14 +13,16 @@ export const lineToMessage = (line: ProcessedLine): ChatCompletionMessage => {
   if (line.type === 'function') {
     return {
       role: 'assistant',
-      function_call: { name: line.name, arguments: line.generatedArgs },
+      function_call: {
+        name: line.name,
+        arguments: JSON.stringify(line.generatedArgs),
+      },
       content: null,
     };
   } else if (line.type === 'command') {
     return {
       role: 'user',
-      content: `${COMMAND_TOKEN}${line.name} ${line.args.join(' ')}
-${line.result}`,
+      content: `${line.result}`,
     };
   } else {
     return {
@@ -35,7 +37,7 @@ class OpenAiClient implements AIClient {
     apiKey: process.env.OPENAI_API_KEY, // This is also the default, can be omitted
   });
   private config = {
-    model: 'gpt-3.5-turbo',
+    model: 'gpt-4',
   };
 
   public getResult = async (

@@ -1,46 +1,32 @@
 import { executeCommand } from '../commands';
 import { executeFunction } from '../functions';
-import { Line, parseContent } from '../parser';
-
-export type ProcessedLine =
-  | {
-      type: 'string';
-      value: string;
-    }
-  | {
-      type: 'command';
-      name: string;
-      args: string[];
-      result: string;
-    }
-  | {
-      type: 'function';
-      name: string;
-      args: string[];
-      generatedArgs?: any;
-      result: string;
-    }
-  | {
-      type: 'error';
-      value: string;
-    };
+import { parseContent } from '../parser';
+import { Line } from '../parser/types';
+import { ProcessedLine } from './types';
 
 export const printProcessedLines = (lines: ProcessedLine[]): void => {
   lines.forEach(line => {
     if (line.type === 'string') {
-      console.log(line.value);
+      console.log(line.value.trimEnd() + '\n');
     } else if (line.type === 'command') {
-      console.log(`Command ${line.name} executed with result: ${line.result}`);
+      console.log(
+        `/${line.name} ${line.args.join(' ')}\n${line.result.trim()}`
+      );
     } else if (line.type === 'function') {
-      console.log(`Function ${line.name} executed with result: ${line.result}`);
+      console.log(
+        `> ${line.name} ${line.args.join(' ')}\n${line.result.trim()}`
+      );
     } else {
       console.log(`Error: ${line.value}`);
     }
   });
 };
 
-const processLines = async (lines: Line[]): Promise<ProcessedLine[]> => {
-  const processedLines: ProcessedLine[] = [];
+const processLines = async (
+  lines: Line[],
+  noFunctions = false
+): Promise<ProcessedLine[]> => {
+  let processedLines: ProcessedLine[] = [];
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
@@ -48,17 +34,13 @@ const processLines = async (lines: Line[]): Promise<ProcessedLine[]> => {
       if (line.type === 'string') {
         processedLines.push(line);
       } else if (line.type === 'command') {
-        const result = await executeCommand(line);
-        processedLines.push({
-          ...line,
-          result,
-        });
-      } else {
-        const result = await executeFunction(line, processedLines);
-        processedLines.push({
-          ...line,
-          result,
-        });
+        processedLines = await executeCommand(line, processedLines);
+      } else if (line.type === 'function') {
+        if (!noFunctions) {
+          processedLines = await executeFunction(line, processedLines);
+        } else {
+          processedLines.push({ ...line, result: 'NA' });
+        }
       }
     } catch (e) {
       if (e instanceof Error) {
@@ -69,8 +51,11 @@ const processLines = async (lines: Line[]): Promise<ProcessedLine[]> => {
   return processedLines;
 };
 
-export const processText = async (text: string): Promise<ProcessedLine[]> => {
+export const processText = async (
+  text: string,
+  noFunctions = false
+): Promise<ProcessedLine[]> => {
   const lines = parseContent(text);
-  const res = await processLines(lines);
+  const res = await processLines(lines, noFunctions);
   return res;
 };

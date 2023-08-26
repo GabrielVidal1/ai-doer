@@ -1,6 +1,6 @@
 import { aiClient } from '../ai';
-import { FunctionLine } from '../parser';
-import { ProcessedLine } from '../processor';
+import { FunctionLine } from '../parser/types';
+import { ProcessedLine } from '../processor/types';
 import bash from './services/bash';
 import think from './services/think';
 import writeFile from './services/writeFile';
@@ -18,15 +18,24 @@ export const getFunction = (functionName: string): AiFunction => {
 
 export const executeFunction = async (
   line: FunctionLine,
-  processedLines: ProcessedLine[]
-): Promise<string> => {
+  history: ProcessedLine[]
+): Promise<ProcessedLine[]> => {
   const func = getFunction(line.name);
-
+  let result = '';
+  let commandArgs: any = undefined;
   if (isPromptFunction(func)) {
-    return aiClient.getResult(processedLines, func);
+    result = await aiClient.getResult(history, func);
+  } else {
+    commandArgs = await aiClient.getCommandArgs(history, func);
+    if (process.env.DEBUG_COMMANDS === 'true') {
+      console.log('commandArgs', commandArgs);
+    }
+    result = await func.exec(line.args)(commandArgs);
   }
-  const commandArgs = await aiClient.getCommandArgs(processedLines, func);
-  console.log('commandArgs', commandArgs);
-  const result = func.exec(line.args)(commandArgs);
-  return result;
+  history.push({
+    ...line,
+    result,
+    generatedArgs: commandArgs,
+  });
+  return history;
 };

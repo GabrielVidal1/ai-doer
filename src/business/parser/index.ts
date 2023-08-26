@@ -1,26 +1,8 @@
 import fs from 'fs';
 import { COMMAND_TOKEN, FUNCTION_TOKEN } from './constants';
+import { CommandLine, FunctionLine, Line } from './types';
 
 const CUSTOM_COMMAND_FOLDERS = './customCommands';
-
-export type CommandLine = {
-  type: 'command';
-  name: string;
-  args: string[];
-};
-
-export type FunctionLine = {
-  type: 'function';
-  name: string;
-  args: string[];
-};
-
-export type StringBlock = {
-  type: 'string';
-  value: string;
-};
-
-export type Line = CommandLine | FunctionLine | StringBlock;
 
 const parseSpecialLine = (line: string): CommandLine | FunctionLine => {
   const lineType = line[0] === COMMAND_TOKEN ? 'command' : 'function';
@@ -38,10 +20,11 @@ const getSubCommand = (args: string[]): string => {
 
   try {
     console.log(commandFile);
-    const content = fs.readFileSync(commandFile, 'utf8');
-    for (let i = 1; i < args.length; i++) {
-      content.replace(`{${i}}`, args[i]);
+    let content = fs.readFileSync(commandFile, 'utf8');
+    for (let i = 0; i < args.length; i++) {
+      content = content.replaceAll(`{${i}}`, args[i + 1]);
     }
+    console.log(content);
     return content;
   } catch (error) {
     throw new Error('Unknown custom command');
@@ -53,25 +36,29 @@ export const parseContent = (fileContent: string): Line[] => {
   const parsedLines: Line[] = [];
   let current = '';
   for (const line of lines) {
-    console.log(line);
     if (line.startsWith(COMMAND_TOKEN) || line.startsWith(FUNCTION_TOKEN)) {
       if (current) {
         parsedLines.push({ type: 'string', value: current });
       }
       current = '';
       const specialLine = parseSpecialLine(line);
-      parsedLines.push(specialLine);
       if (specialLine.type === 'command' && specialLine.name === 'command') {
         parsedLines.push(...parseContent(getSubCommand(specialLine.args)));
+      } else {
+        parsedLines.push(specialLine);
       }
     } else {
-      current += line;
+      current += line + '\n';
     }
   }
-  if (current) {
+  if (current.trim().length > 0) {
     parsedLines.push({ type: 'string', value: current });
   }
-  return parsedLines;
+
+  // Remove empty lines
+  return parsedLines.filter(
+    line => line.type !== 'string' || line.value.trim().length > 0
+  );
 };
 
 export const printLines = (lines: Line[]): void => {
